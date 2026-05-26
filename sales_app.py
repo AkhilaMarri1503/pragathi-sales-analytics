@@ -215,13 +215,11 @@ with st.sidebar:
     
     st.divider()
     
-    st.markdown("""
-    **Supported Formats:**
-    - Any CSV with sales data
-    - Auto-detects columns
-    - Works with POS exports
-    - Works with manual entries
-    """)
+    st.markdown("**Supported Formats:**")
+    st.markdown("- Any CSV with sales data")
+    st.markdown("- Auto-detects columns")
+    st.markdown("- Works with POS exports")
+    st.markdown("- Works with manual entries")
 
 # Main content
 if sales_file:
@@ -267,7 +265,7 @@ if sales_file:
             with col2:
                 st.metric("Total Transactions", f"{total_transactions:,}")
             with col3:
-                st.metric("Avg. per Transaction", f"{avg_transaction:.1f}")
+                st.metric("Avg per Transaction", f"{avg_transaction:.1f}")
             with col4:
                 st.metric("Unique Products", unique_products)
             
@@ -317,13 +315,6 @@ if sales_file:
                 
                 fig = px.bar(weekday_sales, x='Day', y='Units Sold', title="Sales by Day of Week")
                 st.plotly_chart(fig, use_container_width=True)
-                
-                # Hourly pattern (if hour available)
-                if 'Date' in sales_df.columns and sales_df['Date'].dt.hour.nunique() > 1:
-                    sales_df['Hour'] = sales_df['Date'].dt.hour
-                    hourly_sales = sales_df.groupby('Hour')['Quantity'].sum().reset_index()
-                    fig = px.line(hourly_sales, x='Hour', y='Quantity', title="Sales by Hour")
-                    st.plotly_chart(fig, use_container_width=True)
                 
                 # Monthly trend
                 sales_df['Month'] = sales_df['Date'].dt.strftime('%Y-%m')
@@ -415,7 +406,6 @@ if sales_file:
             
             # Slow movers
             st.markdown("### 🐢 Slow Moving Products (Low Demand)")
-            # Get all products, calculate total sales, sort ascending
             all_products_sales = sales_df.groupby(['Product', 'Size'])['Quantity'].sum().reset_index()
             slow_movers = all_products_sales.nsmallest(20, 'Quantity')
             slow_movers.columns = ['Product', 'Size', 'Units Sold']
@@ -449,26 +439,19 @@ else:
     
     ### What This App Does:
     
-    | Feature | Description |
-    |---------|-------------|
-    | **Sales Dashboard** | Key metrics and overview |
-    | **Trend Analysis** | Daily, weekly, monthly patterns |
-    | **Branch Analysis** | Compare branch performance |
-    | **Product Analysis** | Identify best/worst sellers |
-    | **Size Analysis** | See which sizes sell most |
-    | **Report Generation** | PDF reports for management |
+    - **Sales Dashboard** - Key metrics and overview
+    - **Trend Analysis** - Daily, weekly, monthly patterns
+    - **Branch Analysis** - Compare branch performance
+    - **Product Analysis** - Identify best/worst sellers
+    - **Size Analysis** - See which sizes sell most
+    - **Report Generation** - PDF reports for management
     
     ### How to Use:
     
-    1. **Upload your sales CSV file**
-    2. **Select analysis period** (7-365 days)
-    3. **Explore different tabs** for insights
-    4. **Generate reports** for sharing
+    1. Upload your sales CSV file
+    2. Select analysis period (7-365 days)
+    3. Explore different tabs for insights
+    4. Generate reports for sharing
     
     ### Sample Sales File Format:
     
-    ```csv
-    Date,Product,Size,Branch,Quantity
-    2024-01-15,BOYS SCHOOL SHOES,8,POPULAR SHOE COMPANY,5
-    2024-01-15,BOYS SCHOOL SHOES,7,POPULAR SHOE COMPANY,3
-    2024-01-16,GIRLS SCHOOL SHOES,6,PRAGATHI SHOES AMD 2,4
