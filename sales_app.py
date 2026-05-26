@@ -2,8 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-import plotly.express as px
-import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 from fpdf import FPDF
 import re
 
@@ -224,50 +223,75 @@ if sales_file:
             
             st.markdown("---")
             
-            if 'Date' in sales_df.columns and not sales_df['Date'].isna().all():
-                st.subheader("Sales Trend")
-                daily_sales = sales_df.groupby(sales_df['Date'].dt.date)['Quantity'].sum().reset_index()
-                daily_sales.columns = ['Date', 'Units Sold']
-                
-                fig = px.line(daily_sales, x='Date', y='Units Sold', title="Daily Sales Trend")
-                fig.update_layout(height=400)
-                st.plotly_chart(fig, use_container_width=True)
+            # Top products bar chart using matplotlib
+            st.subheader("Top 10 Selling Products")
+            top_products = sales_df.groupby('Product')['Quantity'].sum().nlargest(10).reset_index()
             
-            col1, col2 = st.columns(2)
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.barh(top_products['Product'], top_products['Quantity'])
+            ax.set_xlabel('Units Sold')
+            ax.set_title('Top 10 Products')
+            ax.invert_yaxis()
+            st.pyplot(fig)
+            plt.close()
             
-            with col1:
-                st.subheader("Top 10 Selling Products")
-                top_products = sales_df.groupby('Product')['Quantity'].sum().nlargest(10).reset_index()
-                fig = px.bar(top_products, x='Product', y='Quantity', title="Top Products")
-                fig.update_layout(xaxis_tickangle=-45, height=400)
-                st.plotly_chart(fig, use_container_width=True)
-            
-            with col2:
-                st.subheader("Sales by Size")
-                size_sales = sales_df.groupby('Size')['Quantity'].sum().nlargest(10).reset_index()
-                if not size_sales.empty:
-                    fig = px.pie(size_sales, values='Quantity', names='Size', title="Sales by Size")
-                    st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.info("Size data not available")
+            # Sales by size pie chart
+            st.subheader("Sales by Size")
+            size_sales = sales_df.groupby('Size')['Quantity'].sum().nlargest(10).reset_index()
+            if not size_sales.empty:
+                fig, ax = plt.subplots(figsize=(8, 8))
+                ax.pie(size_sales['Quantity'], labels=size_sales['Size'], autopct='%1.1f%%')
+                ax.set_title('Sales Distribution by Size')
+                st.pyplot(fig)
+                plt.close()
+            else:
+                st.info("Size data not available")
         
         # TAB 2: TRENDS
         with tab2:
             st.subheader("Sales Trends and Patterns")
             
             if 'Date' in sales_df.columns and not sales_df['Date'].isna().all():
+                # Daily trend line chart
+                daily_sales = sales_df.groupby(sales_df['Date'].dt.date)['Quantity'].sum().reset_index()
+                daily_sales.columns = ['Date', 'Units Sold']
+                
+                fig, ax = plt.subplots(figsize=(12, 5))
+                ax.plot(daily_sales['Date'], daily_sales['Units Sold'], marker='o', linewidth=2)
+                ax.set_xlabel('Date')
+                ax.set_ylabel('Units Sold')
+                ax.set_title('Daily Sales Trend')
+                ax.tick_params(axis='x', rotation=45)
+                st.pyplot(fig)
+                plt.close()
+                
+                # Weekly pattern
                 sales_df['DayOfWeek'] = sales_df['Date'].dt.day_name()
                 weekday_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
                 weekday_sales = sales_df.groupby('DayOfWeek')['Quantity'].sum().reindex(weekday_order).reset_index()
                 weekday_sales.columns = ['Day', 'Units Sold']
                 
-                fig = px.bar(weekday_sales, x='Day', y='Units Sold', title="Sales by Day of Week")
-                st.plotly_chart(fig, use_container_width=True)
+                fig, ax = plt.subplots(figsize=(10, 5))
+                ax.bar(weekday_sales['Day'], weekday_sales['Units Sold'])
+                ax.set_xlabel('Day')
+                ax.set_ylabel('Units Sold')
+                ax.set_title('Sales by Day of Week')
+                ax.tick_params(axis='x', rotation=45)
+                st.pyplot(fig)
+                plt.close()
                 
+                # Monthly trend
                 sales_df['Month'] = sales_df['Date'].dt.strftime('%Y-%m')
                 monthly_sales = sales_df.groupby('Month')['Quantity'].sum().reset_index()
-                fig = px.line(monthly_sales, x='Month', y='Quantity', title="Monthly Sales Trend")
-                st.plotly_chart(fig, use_container_width=True)
+                
+                fig, ax = plt.subplots(figsize=(10, 5))
+                ax.bar(monthly_sales['Month'], monthly_sales['Quantity'])
+                ax.set_xlabel('Month')
+                ax.set_ylabel('Units Sold')
+                ax.set_title('Monthly Sales Trend')
+                ax.tick_params(axis='x', rotation=45)
+                st.pyplot(fig)
+                plt.close()
         
         # TAB 3: BRANCH ANALYSIS
         with tab3:
@@ -284,8 +308,14 @@ if sales_file:
             st.dataframe(branch_sales, use_container_width=True)
             
             if not branch_sales.empty:
-                fig = px.bar(branch_sales, x='Branch', y='Quantity', title="Sales by Branch")
-                st.plotly_chart(fig, use_container_width=True)
+                fig, ax = plt.subplots(figsize=(10, 5))
+                ax.bar(branch_sales['Branch'], branch_sales['Quantity'])
+                ax.set_xlabel('Branch')
+                ax.set_ylabel('Units Sold')
+                ax.set_title('Sales by Branch')
+                ax.tick_params(axis='x', rotation=45)
+                st.pyplot(fig)
+                plt.close()
             
             st.subheader("Top Products by Branch")
             if not branch_sales.empty:
@@ -313,17 +343,27 @@ if sales_file:
                         avg = product_data['Quantity'].mean()
                         st.metric("Avg per Transaction", f"{avg:.1f}")
                     
+                    # Size distribution
                     st.subheader("Size-wise Sales")
                     size_dist = product_data.groupby('Size')['Quantity'].sum().reset_index()
                     if not size_dist.empty:
-                        fig = px.bar(size_dist, x='Size', y='Quantity', title=f"Size Distribution for {selected_product}")
-                        st.plotly_chart(fig, use_container_width=True)
+                        fig, ax = plt.subplots(figsize=(10, 5))
+                        ax.bar(size_dist['Size'], size_dist['Quantity'])
+                        ax.set_xlabel('Size')
+                        ax.set_ylabel('Units Sold')
+                        ax.set_title(f"Size Distribution for {selected_product}")
+                        st.pyplot(fig)
+                        plt.close()
                     
+                    # Branch distribution
                     st.subheader("Branch-wise Sales")
                     branch_dist = product_data.groupby('Branch')['Quantity'].sum().reset_index()
                     if not branch_dist.empty:
-                        fig = px.pie(branch_dist, values='Quantity', names='Branch', title="Branch Distribution")
-                        st.plotly_chart(fig, use_container_width=True)
+                        fig, ax = plt.subplots(figsize=(8, 8))
+                        ax.pie(branch_dist['Quantity'], labels=branch_dist['Branch'], autopct='%1.1f%%')
+                        ax.set_title("Branch Distribution")
+                        st.pyplot(fig)
+                        plt.close()
                 
                 st.subheader("Product Comparison")
                 top_products_list = sales_df.groupby('Product')['Quantity'].sum().nlargest(5).index.tolist()
@@ -389,7 +429,6 @@ else:
     st.write("**Sample Sales File Format:**")
     st.write("Date,Product,Size,Branch,Quantity")
     st.write("2024-01-15,BOYS SCHOOL SHOES,8,POPULAR SHOE COMPANY,5")
-    st.write("2024-01-15,BOYS SCHOOL SHOES,7,POPULAR SHOE COMPANY,3")
 
 st.sidebar.markdown("---")
 st.sidebar.caption("v1.0 | Sales Analytics Dashboard")
